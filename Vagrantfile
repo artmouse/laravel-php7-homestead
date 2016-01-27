@@ -28,9 +28,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.synced_folder './', '/vagrant', disabled: true
 
   # Run The Base Provisioning Script
-  config.vm.provision 'shell', path: './scripts/update.sh'
-  config.vm.provision :reload
-  config.vm.provision 'shell', path: './scripts/vmware_tools.sh'
-  config.vm.provision :reload
+  config.vm.provision 'shell', path: './scripts/update.sh'  
   config.vm.provision 'shell', path: './scripts/provision.sh'
+  config.vm.provision :reload
 end

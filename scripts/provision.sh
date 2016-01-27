@@ -4,10 +4,8 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Update Package List
 
-apt-get update
 
-# Update System Packages
-apt-get -y upgrade
+
 
 # Force Locale
 
@@ -20,14 +18,15 @@ apt-get install -y software-properties-common curl
 
 apt-add-repository ppa:nginx/development -y
 apt-add-repository ppa:rwky/redis -y
-apt-add-repository ppa:ondrej/php-7.0 -y
+apt-add-repository ppa:ondrej/php -y
+
 
 # gpg: key 5072E1F5: public key "MySQL Release Engineering <mysql-build@oss.oracle.com>" imported
 apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 5072E1F5
-sh -c 'echo "deb http://repo.mysql.com/apt/ubuntu/ trusty mysql-5.7" >> /etc/apt/sources.list.d/mysql.list'
+sh -c 'echo "deb http://repo.mysql.com/apt/ubuntu/ trusty mysql-5.6" >> /etc/apt/sources.list.d/mysql.list'
 
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list.d/postgresql.list'
+#wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+#sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list.d/postgresql.list'
 
 curl -s https://packagecloud.io/gpg.key | apt-key add -
 echo "deb http://packages.blackfire.io/debian any main" | tee /etc/apt/sources.list.d/blackfire.list
@@ -37,6 +36,9 @@ curl --silent --location https://deb.nodesource.com/setup_5.x | bash -
 # Update Package Lists
 
 apt-get update
+# Update System Packages
+apt-get -y upgrade
+
 
 # Install Some Basic Packages
 
@@ -48,11 +50,14 @@ make python2.7-dev python-pip re2c supervisor unattended-upgrades whois vim libn
 ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
 # Install PHP Stuffs
+apt-get install -y --force-yes php5.6-cli php5.6-dev php5.6-pgsql php5.6-sqlite3 php5.6-gd  php5.6-curl php5.6-imap php5.6-mysql  php5.6-readline  php5.6-mcrypt php5.6-intl
 
-apt-get install -y --force-yes php7.0-cli php7.0-dev \
-php-pgsql php-sqlite3 php-gd php-apcu \
-php-curl php7.0-dev \
-php-imap php-mysql php-memcached php7.0-readline
+apt-get install -y --force-yes php7.0-cli php7.0-dev php7.0-pgsql php7.0-sqlite3 php7.0-gd  php7.0-curl php7.0-imap php7.0-mysql  php7.0-readline  php7.0-mcrypt php7.0-intl
+
+
+apt-get install php-pear php-redis php-xdebug php-apcu php-memcached
+mv /etc/php/mods-available 
+# added xdebug and apcu-bc
 
 # Install Composer
 
@@ -77,9 +82,17 @@ sudo sed -i "s/display_errors = .*/display_errors = On/" /etc/php/7.0/cli/php.in
 sudo sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php/7.0/cli/php.ini
 sudo sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/7.0/cli/php.ini
 
+
+
+sudo sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/5.6/cli/php.ini
+sudo sed -i "s/display_errors = .*/display_errors = On/" /etc/php/5.6/cli/php.ini
+sudo sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php/5.6/cli/php.ini
+sudo sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/5.6/cli/php.ini
+
+
 # Install Nginx & PHP-FPM
 
-apt-get install -y --force-yes nginx php7.0-fpm
+apt-get install -y --force-yes nginx php7.0-fpm php5.6-fpm
 
 rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/sites-available/default
@@ -112,6 +125,17 @@ sed -i "s/upload_max_filesize = .*/upload_max_filesize = 100M/" /etc/php/7.0/fpm
 sed -i "s/post_max_size = .*/post_max_size = 100M/" /etc/php/7.0/fpm/php.ini
 sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/7.0/fpm/php.ini
 
+sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/5.6/fpm/php.ini
+sed -i "s/display_errors = .*/display_errors = On/" /etc/php/5.6/fpm/php.ini
+sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/" /etc/php/5.6/fpm/php.ini
+sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php/5.6/fpm/php.ini
+sed -i "s/upload_max_filesize = .*/upload_max_filesize = 100M/" /etc/php/5.6/fpm/php.ini
+sed -i "s/post_max_size = .*/post_max_size = 100M/" /etc/php/5.6/fpm/php.ini
+sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/5.6/fpm/php.ini
+
+
+
+
 # Copy fastcgi_params to Nginx because they broke it on the PPA
 
 cat > /etc/nginx/fastcgi_params << EOF
@@ -143,13 +167,21 @@ sed -i "s/# server_names_hash_bucket_size.*/server_names_hash_bucket_size 64;/" 
 
 sed -i "s/user = www-data/user = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
 sed -i "s/group = www-data/group = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
-
 sed -i "s/listen\.owner.*/listen.owner = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
 sed -i "s/listen\.group.*/listen.group = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
 sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php/7.0/fpm/pool.d/www.conf
 
+
+sed -i "s/user = www-data/user = vagrant/" /etc/php/5.6/fpm/pool.d/www.conf
+sed -i "s/group = www-data/group = vagrant/" /etc/php/5.6/fpm/pool.d/www.conf
+sed -i "s/listen\.owner.*/listen.owner = vagrant/" /etc/php/5.6/fpm/pool.d/www.conf
+sed -i "s/listen\.group.*/listen.group = vagrant/" /etc/php/5.6/fpm/pool.d/www.conf
+sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php/5.6/fpm/pool.d/www.conf
+
+
 service nginx restart
 service php7.0-fpm restart
+service php5.6-fpm restart
 
 # Add Vagrant User To WWW-Data
 
@@ -175,8 +207,8 @@ debconf-set-selections <<< "mysql-community-server mysql-community-server/re-roo
 apt-get install -y mysql-server
 
 # Configure MySQL Password Lifetime
-
-echo "default_password_lifetime = 0" >> /etc/mysql/my.cnf
+# not working in mysql 5.6
+#echo "default_password_lifetime = 0" >> /etc/mysql/my.cnf
 
 # Configure MySQL Remote Access
 
@@ -198,15 +230,15 @@ mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --user=root --password=secret my
 
 # Install Postgres
 
-apt-get install -y postgresql-9.4 postgresql-contrib-9.4
+#apt-get install -y postgresql-9.4 postgresql-contrib-9.4
 
 # Configure Postgres Remote Access
 
-sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.4/main/postgresql.conf
-echo "host    all             all             10.0.2.2/32               md5" | tee -a /etc/postgresql/9.4/main/pg_hba.conf
-sudo -u postgres psql -c "CREATE ROLE homestead LOGIN UNENCRYPTED PASSWORD 'secret' SUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;"
-sudo -u postgres /usr/bin/createdb --echo --owner=homestead homestead
-service postgresql restart
+#sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.4/main/postgresql.conf
+#echo "host    all             all             10.0.2.2/32               md5" | tee -a /etc/postgresql/9.4/main/pg_hba.conf
+#sudo -u postgres psql -c "CREATE ROLE homestead LOGIN UNENCRYPTED PASSWORD 'secret' SUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;"
+#sudo -u postgres /usr/bin/createdb --echo --owner=homestead homestead
+#service postgresql restart
 
 # Install Blackfire
 
@@ -228,7 +260,7 @@ sed -i "s/#START=yes/START=yes/" /etc/default/beanstalkd
 /sbin/swapon /var/swap.1
 
 # Minimize The Disk Image
-
+apt-get clean
 echo "Minimizing disk image..."
 dd if=/dev/zero of=/EMPTY bs=1M
 rm -f /EMPTY
